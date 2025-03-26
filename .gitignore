@@ -1,0 +1,28 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Packages
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Environment variables and secrets
+.env
+*.env
+
+# AWS CLI and Lambda artifacts
+*.zip
+*.json
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+
+# OS generated files
+.DS_Store
+Thumbs.db
