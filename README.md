@@ -121,7 +121,7 @@ aws lambda create-function --function-name bedrock-image-generator \
 
 
 # Inline sample for Current AWS Environment
-aws lambda --profile genai create-function --function-name bedrock-image-generator --runtime python3.8 --handler bedrock_image_lambda.lambda_handler --zip-file fileb://bedrock_image_lambda.zip --role arn:aws:iam::[YOUR_ACCOUNT_ID]:role/AWSBedrockAndS3ForLambda --timeout 60 --memory-size 512
+aws lambda --profile genai create-function --function-name bedrock-image-generator --runtime python3.8 --handler bedrock_image_lambda.lambda_handler --zip-file fileb://bedrock_image_lambda.zip --role arn:aws:iam::[YOUR_ACCOUNT_ID]:role/bedrock-lambda-role --timeout 60 --memory-size 512
 
 aws lambda update-function-configuration --function-name bedrock-image-generator --environment "Variables={S3_BUCKET_NAME=bedrock-image-lambda-270325}"
 
