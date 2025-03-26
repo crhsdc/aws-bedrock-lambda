@@ -10,8 +10,13 @@ def lambda_handler(event, context):
     bedrock = boto3.client('bedrock-runtime')
     s3 = boto3.client('s3')
     
-    # Get the S3 bucket name from environment variable
-    bucket_name = os.environ['S3_BUCKET_NAME']
+    # Validate environment variable
+    bucket_name = os.environ.get('S3_BUCKET_NAME')
+    if not bucket_name:
+        return {
+            'statusCode': 500,
+            'body': json.dumps({'error': 'S3_BUCKET_NAME environment variable is not set'})
+        }
     
     # Get the prompt from the event
     prompt = event.get('prompt', 'A beautiful sunset over mountains')
@@ -58,10 +63,10 @@ def lambda_handler(event, context):
         # Generate the S3 URL
         s3_url = f"s3://{bucket_name}/{file_name}"
         
+        # Remove sensitive data from response
         return {
             'statusCode': 200,
             'body': json.dumps({
-                'image_data': image_data,
                 's3_url': s3_url,
                 'file_name': file_name
             })

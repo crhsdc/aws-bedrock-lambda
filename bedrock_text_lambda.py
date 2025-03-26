@@ -8,6 +8,13 @@ def lambda_handler(event, context):
     # Get the input text from the event
     input_text = event.get('prompt', 'Tell me a short story.')
     
+    # Validate input
+    if not input_text or not isinstance(input_text, str):
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'Invalid input: prompt must be a non-empty string'})
+        }
+    
     # Prepare the request body
     request_body = {
         "anthropic_version": "bedrock-2023-05-31",
@@ -40,9 +47,8 @@ def lambda_handler(event, context):
         }
         
     except Exception as e:
+        print(f"Error: {str(e)}")
         return {
             'statusCode': 500,
-            'body': json.dumps({
-                'error': str(e)
-            })
+            'body': json.dumps({'error': 'Internal server error'})
         }
