@@ -1,8 +1,9 @@
 # AWS Bedrock and AWS Services Lambda Functions
 
-This project provides AWS Lambda functions that leverage various AWS services including Amazon Bedrock's AI capabilities, Amazon Transcribe, Amazon Polly, Amazon Textract, Amazon Rekognition, and Amazon Translate.
+This project provides AWS Lambda functions that leverage various AWS services including Amazon Bedrock's AI capabilities, Amazon Transcribe, Amazon Polly, Amazon Textract, Amazon Rekognition, Amazon Translate, and QR code generation.
 
 The repository contains Lambda functions that demonstrate the integration of AWS services with serverless architecture:
+
 - Text generation using Claude 3 Sonnet model
 - Image generation using Stable Diffusion XL
 - Speech-to-text conversion using Amazon Transcribe
@@ -10,6 +11,7 @@ The repository contains Lambda functions that demonstrate the integration of AWS
 - Document text extraction using Amazon Textract
 - Image analysis using Amazon Rekognition
 - Text translation using Amazon Translate
+- QR code generation from URLs
 
 ## Repository Structure
 
@@ -23,6 +25,9 @@ The repository contains Lambda functions that demonstrate the integration of AWS
 ├── textract_lambda.py       # Lambda function for extracting text from documents using Amazon Textract
 ├── rekognition_lambda.py    # Lambda function for analyzing images using Amazon Rekognition
 ├── translate_lambda.py      # Lambda function for translating text using Amazon Translate
+├── qrcode_lambda.py         # Lambda function for generating QR codes from URLs (Python)
+├── qrcode_lambda.js         # Lambda function for generating QR codes from URLs (JavaScript)
+├── package.json             # Node.js package configuration for JavaScript Lambda
 └── README.md                # Project documentation
 ```
 
@@ -39,6 +44,7 @@ The `transcribe_lambda.py` file demonstrates how to use Amazon Transcribe with A
 #### Required IAM Permissions for Transcribe Lambda
 
 The Lambda function requires the following permissions:
+
 - `transcribe:StartTranscriptionJob`
 - `s3:GetObject` (for the source bucket)
 - `s3:PutObject` (for the destination bucket)
@@ -74,6 +80,7 @@ The `polly_lambda.py` file demonstrates how to use Amazon Polly with AWS Lambda.
 #### Required IAM Permissions for Polly Lambda
 
 The Lambda function requires the following permissions:
+
 - `polly:SynthesizeSpeech`
 - `s3:PutObject` (for storing the audio file)
 
@@ -100,6 +107,7 @@ The `textract_lambda.py` file demonstrates how to use Amazon Textract with AWS L
 #### Required IAM Permissions for Textract Lambda
 
 The Lambda function requires the following permissions:
+
 - `textract:DetectDocumentText`
 - `textract:AnalyzeDocument`
 - `s3:GetObject` (for accessing the document)
@@ -134,6 +142,7 @@ The `rekognition_lambda.py` file demonstrates how to use Amazon Rekognition with
 #### Required IAM Permissions for Rekognition Lambda
 
 The Lambda function requires the following permissions:
+
 - `rekognition:DetectLabels`
 - `s3:GetObject` (for accessing the image)
 
@@ -167,6 +176,7 @@ The `translate_lambda.py` file demonstrates how to use Amazon Translate with AWS
 #### Required IAM Permissions for Translate Lambda
 
 The Lambda function requires the following permissions:
+
 - `translate:TranslateText`
 
 #### Example test event for Translate Lambda
@@ -177,6 +187,82 @@ The Lambda function requires the following permissions:
   "sourceLanguage": "en",
   "targetLanguage": "es"
 }
+```
+
+### QR Code Generator Lambda Function
+
+The `qrcode_lambda.py` (Python) and `qrcode_lambda.js` (JavaScript) files demonstrate how to generate QR codes from URLs, upload them to S3, and store the URL data in DynamoDB. This function:
+
+1. Takes a URL input from the event
+2. Generates a QR code image
+3. Uploads the image to S3
+4. Stores the URL and image location in DynamoDB
+5. Returns the S3 URL of the generated image
+
+#### Required IAM Permissions for QR Code Lambda
+
+The Lambda function requires the following permissions:
+
+- `s3:PutObject` (for storing the QR code image)
+- `dynamodb:PutItem` (for storing URL data)
+
+#### Example test event for QR Code Lambda
+
+```json
+{
+  "url": "https://aws.amazon.com",
+  "bucket": "your-s3-bucket-name",
+  "tableName": "qrcode-urls",
+  "filename": "my-qrcode.png" // Optional
+}
+```
+
+#### Deployment Notes for Python QR Code Lambda
+
+This Lambda function requires the `qrcode` Python package. When deploying:
+
+1. Create a deployment package that includes the dependencies:
+
+```bash
+pip install qrcode pillow -t ./package
+cp qrcode_lambda.py ./package/
+cd package
+zip -r ../qrcode-function.zip .
+```
+
+2. Deploy the function:
+
+```bash
+aws lambda create-function --function-name qrcode-generator-python \
+    --runtime python3.8 \
+    --handler qrcode_lambda.lambda_handler \
+    --zip-file fileb://qrcode-function.zip \
+    --role arn:aws:iam::[YOUR_ACCOUNT_ID]:role/aws-services-lambda-role \
+    --timeout 30 \
+    --memory-size 256
+```
+
+#### Deployment Notes for JavaScript QR Code Lambda
+
+This Lambda function requires the `qrcode` and `uuid` npm packages. When deploying:
+
+1. Create a deployment package that includes the dependencies:
+
+```bash
+npm install
+zip -r qrcode-function-js.zip qrcode_lambda.js node_modules package.json
+```
+
+2. Deploy the function:
+
+```bash
+aws lambda create-function --function-name qrcode-generator-js \
+    --runtime nodejs18.x \
+    --handler qrcode_lambda.handler \
+    --zip-file fileb://qrcode-function-js.zip \
+    --role arn:aws:iam::[YOUR_ACCOUNT_ID]:role/aws-services-lambda-role \
+    --timeout 30 \
+    --memory-size 256
 ```
 
 ## AWS Bedrock Lambda Functions
@@ -243,6 +329,7 @@ cat > permissions-policy.json << EOF
                 "textract:AnalyzeDocument",
                 "rekognition:DetectLabels",
                 "translate:TranslateText",
+                "dynamodb:PutItem",
                 "s3:GetObject",
                 "s3:PutObject",
                 "logs:CreateLogGroup",
@@ -390,4 +477,7 @@ S3 Upload → Lambda → Rekognition → Response
 
 Translate:
 API Gateway → Lambda → Translate → Response
+
+QR Code:
+API Gateway → Lambda → QR Generation → S3 → DynamoDB → Response
 ```
